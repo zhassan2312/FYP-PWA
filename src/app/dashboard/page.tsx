@@ -4,19 +4,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { DeviceStatusChip } from "~/components/layout/device-status-chip";
 import { Grid, Play, Cpu, Zap, Eye, Code, Settings } from "lucide-react";
-
-// Mock controller data - this would come from actual controller connection
-const mockController = {
-  id: "main-controller",
-  name: "My Robot Controller",
-  type: "ev3" as const,
-  status: "online" as const,
-  batteryLevel: 85,
-  connectionType: "usb" as const,
-  signalStrength: 4,
-  connectedComponents: 6,
-  availablePorts: 2,
-};
+import { mockController, getRunningPrograms } from "~/lib/mock-data";
 
 export default function DashboardPage() {
   return (

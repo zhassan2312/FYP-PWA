@@ -16,7 +16,7 @@ import { cn } from "~/lib/utils";
 interface DeviceStatusChipProps {
   id: string;
   name: string;
-  type: "ev3" | "raspberry-pi" | "arduino" | "micro-bit" | "custom";
+  type: "ev3" | "nxt" | "spike" | "raspberry-pi" | "arduino" | "micro-bit" | "custom";
   status: "online" | "offline" | "connecting" | "error";
   batteryLevel?: number; // 0-100
   lastSeen?: Date;
@@ -62,6 +62,8 @@ export function DeviceStatusChip({
 
   const typeLabels = {
     "ev3": "EV3",
+    "nxt": "NXT",
+    "spike": "SPIKE",
     "raspberry-pi": "Pi",
     "arduino": "Arduino",
     "micro-bit": "micro:bit",

@@ -17,6 +17,7 @@ import {
   Eye,
   EyeOff
 } from "lucide-react";
+import { mockPrograms } from "~/lib/mock-data";
 
 export default function ProgramPage() {
   const [isRunning, setIsRunning] = useState(false);

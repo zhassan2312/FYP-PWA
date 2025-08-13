@@ -17,79 +17,33 @@ import {
   Eye,
   Volume2
 } from "lucide-react";
+import { mockController, mockMotors, mockSensors, mockRobotConfig } from "~/lib/mock-data";
 
-// Mock controller data
-const mockController = {
-  type: "ev3" as const,
-  name: "My EV3 Controller",
-  status: "online" as const,
-};
-
-// Mock ports configuration
+// Convert motors and sensors to ports format for the component
 const mockPorts = [
-  {
-    id: "motor-a",
-    label: "Motor Port A",
+  ...mockMotors.map(motor => ({
+    id: motor.id,
+    label: `Motor Port ${motor.port}`,
     type: "motor" as const,
     connected: {
-      name: "Left Wheel Motor",
-      deviceType: "large-motor" as const,
+      name: motor.name,
+      deviceType: (motor.type === "large" ? "large-motor" : "medium-motor") as "large-motor" | "medium-motor",
     },
-  },
-  {
-    id: "motor-b", 
-    label: "Motor Port B",
-    type: "motor" as const,
+  })),
+  ...mockSensors.map(sensor => ({
+    id: sensor.id,
+    label: `Sensor Port ${sensor.port}`,
+    type: "sensor" as const,
     connected: {
-      name: "Right Wheel Motor",
-      deviceType: "large-motor" as const,
+      name: sensor.name,
+      deviceType: sensor.type as "ultrasonic" | "color" | "touch" | "gyro" | "light" | "sound",
     },
-  },
-  {
-    id: "motor-c",
-    label: "Motor Port C",
-    type: "motor" as const,
-    connected: {
-      name: "Arm Motor",
-      deviceType: "medium-motor" as const,
-    },
-  },
+  })),
+  // Add empty ports
   {
     id: "motor-d",
-    label: "Motor Port D", 
+    label: "Motor Port D",
     type: "motor" as const,
-  },
-  {
-    id: "sensor-1",
-    label: "Sensor Port 1",
-    type: "sensor" as const,
-    connected: {
-      name: "Ultrasonic Sensor",
-      deviceType: "ultrasonic" as const,
-    },
-  },
-  {
-    id: "sensor-2",
-    label: "Sensor Port 2",
-    type: "sensor" as const,
-    connected: {
-      name: "Color Sensor",
-      deviceType: "color" as const,
-    },
-  },
-  {
-    id: "sensor-3",
-    label: "Sensor Port 3",
-    type: "sensor" as const,
-    connected: {
-      name: "Touch Sensor",
-      deviceType: "touch" as const,
-    },
-  },
-  {
-    id: "sensor-4",
-    label: "Sensor Port 4",
-    type: "sensor" as const,
   },
 ];
 
@@ -218,7 +172,7 @@ export default function ControllerPage() {
               <Zap className="h-6 w-6 mx-auto mb-2 text-blue-600" />
               <div className="text-sm font-medium">Motors</div>
               <div className="text-xs text-muted-foreground">
-                {mockPorts.filter(p => p.type === "motor" && p.connected).length} / {mockPorts.filter(p => p.type === "motor").length}
+                {mockPorts.filter(p => p.type === "motor" && "connected" in p && p.connected).length} / {mockPorts.filter(p => p.type === "motor").length}
               </div>
             </div>
             
@@ -226,7 +180,7 @@ export default function ControllerPage() {
               <Eye className="h-6 w-6 mx-auto mb-2 text-green-600" />
               <div className="text-sm font-medium">Sensors</div>
               <div className="text-xs text-muted-foreground">
-                {mockPorts.filter(p => p.type === "sensor" && p.connected).length} / {mockPorts.filter(p => p.type === "sensor").length}
+                {mockPorts.filter(p => p.type === "sensor" && "connected" in p && p.connected).length} / {mockPorts.filter(p => p.type === "sensor").length}
               </div>
             </div>
             

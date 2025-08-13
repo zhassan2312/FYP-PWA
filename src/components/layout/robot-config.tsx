@@ -26,9 +26,9 @@ interface Port {
 
 interface RobotConfigProps {
   controller: {
-    type: "ev3" | "raspberry-pi" | "arduino" | "micro-bit";
+    type: "ev3" | "nxt" | "spike" | "raspberry-pi" | "arduino" | "micro-bit" | "custom";
     name: string;
-    status: "online" | "offline";
+    status: "online" | "offline" | "connecting" | "error";
   };
   ports: Port[];
   onConfigurePort: (portId: string) => void;
