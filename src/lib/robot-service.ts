@@ -7,6 +7,8 @@ export interface RobotCommand {
   [key: string]: any;
 }
 
+import { showToast } from './toast-utils';
+
 export interface RobotStatus {
   connected: boolean;
   running: boolean;
@@ -27,6 +29,7 @@ export interface RobotStatus {
   };
   servos: { [key: string]: number };
   lastUpdate: number;
+  error?: string; // Optional error message
 }
 
 class RobotService {
@@ -62,9 +65,10 @@ class RobotService {
     
     // Simulate connection
     setTimeout(() => {
-      this.status.connected = true;
-      this.status.lastUpdate = Date.now();
-      this.notifyListeners();
+      this.updateStatusWithNotification({ 
+        connected: true,
+        lastUpdate: Date.now()
+      });
       
       // Start mock sensor updates
       this.startMockSensorUpdates();
@@ -77,8 +81,7 @@ class RobotService {
       this.ws = new WebSocket(url);
       
       this.ws.onopen = () => {
-        this.status.connected = true;
-        this.notifyListeners();
+        this.updateStatusWithNotification({ connected: true });
         console.log('Connected to robot controller');
       };
 
@@ -92,16 +95,19 @@ class RobotService {
       };
 
       this.ws.onclose = () => {
-        this.status.connected = false;
-        this.status.running = false;
-        this.notifyListeners();
+        this.updateStatusWithNotification({ 
+          connected: false, 
+          running: false 
+        });
         console.log('Disconnected from robot controller');
       };
 
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        this.status.connected = false;
-        this.notifyListeners();
+        this.updateStatusWithNotification({ 
+          connected: false,
+          error: 'Connection error occurred'
+        });
       };
 
     } catch (error) {
@@ -133,15 +139,13 @@ class RobotService {
 
     this.commandQueue = [...commands];
     this.isExecuting = true;
-    this.status.running = true;
-    this.notifyListeners();
+    this.updateStatusWithNotification({ running: true });
 
     try {
       await this.executeCommandQueue();
     } finally {
       this.isExecuting = false;
-      this.status.running = false;
-      this.notifyListeners();
+      this.updateStatusWithNotification({ running: false });
     }
   }
 
@@ -149,11 +153,10 @@ class RobotService {
   public stopProgram(): void {
     this.commandQueue = [];
     this.isExecuting = false;
-    this.status.running = false;
     
     // Send stop command to robot
     this.sendCommand({ type: 'motor_stop', timestamp: Date.now() });
-    this.notifyListeners();
+    this.updateStatusWithNotification({ running: false });
   }
 
   // Execute command queue sequentially
@@ -339,6 +342,35 @@ class RobotService {
 
   private notifyListeners(): void {
     this.listeners.forEach(listener => listener(this.status));
+  }
+
+  // Update status with toast notifications for important changes
+  private updateStatusWithNotification(updates: Partial<RobotStatus>): void {
+    const previousStatus = { ...this.status };
+    this.status = { ...this.status, ...updates };
+    
+    // Show toast notifications for important status changes
+    if (previousStatus.connected !== this.status.connected) {
+      if (this.status.connected) {
+        showToast.success('🤖 Robot connected successfully');
+      } else {
+        showToast.error('🤖 Robot disconnected');
+      }
+    }
+    
+    if (previousStatus.running !== this.status.running) {
+      if (this.status.running) {
+        showToast.info('▶️ Program started');
+      } else {
+        showToast.info('⏹️ Program stopped');
+      }
+    }
+    
+    if (this.status.error && this.status.error !== previousStatus.error) {
+      showToast.error(`❌ Robot error: ${this.status.error}`);
+    }
+    
+    this.notifyListeners();
   }
 
   // Get current status

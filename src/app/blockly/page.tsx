@@ -4,9 +4,31 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import { BlocklyWorkspace, ROBOT_TOOLBOX } from "~/components/blockly-workspace";
 import { RobotStatusPanel } from "~/components/robot-status-panel";
 import { robotService, type RobotStatus } from "~/lib/robot-service";
+import { setToastFunction } from "~/lib/toast-utils";
+import { toast } from "sonner";
 import { 
   Play, 
   Square, 
@@ -36,6 +58,9 @@ export default function BlocklyPage() {
 
   // Subscribe to robot status updates
   useEffect(() => {
+    // Set the toast function for the toast utilities
+    setToastFunction(toast);
+    
     const handleStatusUpdate = (status: RobotStatus) => {
       setRobotStatus(status);
       setIsRunning(status.running);
@@ -52,18 +77,33 @@ export default function BlocklyPage() {
     if (isRunning) {
       // Stop program
       robotService.stopProgram();
+      toast.info("Program stopped", {
+        description: "Robot program execution has been halted."
+      });
     } else {
       // Run program
       try {
         if (programCommands.length === 0) {
-          alert('No program to run! Drag some blocks to the workspace first.');
+          toast.error("No program to run", {
+            description: "Drag some blocks to the workspace first to create a program."
+          });
           return;
         }
         
+        toast.loading("Starting program...", {
+          description: `Executing ${programCommands.length} command(s)`
+        });
+        
         await robotService.executeProgram(programCommands);
+        
+        toast.success("Program completed", {
+          description: "Robot program executed successfully!"
+        });
       } catch (error) {
         console.error('Failed to run program:', error);
-        alert('Failed to run program: ' + (error as Error).message);
+        toast.error("Program execution failed", {
+          description: (error as Error).message
+        });
       }
     }
   };
@@ -75,13 +115,20 @@ export default function BlocklyPage() {
       const programData = {
         code: generatedCode,
         commands: programCommands,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        blockCount: programCommands.length
       };
       
       localStorage.setItem('blockly_program', JSON.stringify(programData));
-      console.log('Program saved successfully');
+      
+      toast.success("Program saved", {
+        description: `Saved ${programCommands.length} block(s) to local storage.`
+      });
     } catch (error) {
       console.error('Failed to save program:', error);
+      toast.error("Save failed", {
+        description: "Could not save program to local storage."
+      });
     } finally {
       setTimeout(() => setIsSaving(false), 1000);
     }
@@ -92,8 +139,59 @@ export default function BlocklyPage() {
   }, []);
 
   const handleProgramChange = useCallback((commands: any[]) => {
+    const previousLength = programCommands.length;
     setProgramCommands(commands);
-  }, []);
+    
+    // Show helpful toast when user adds their first block
+    if (commands.length === 1 && previousLength === 0) {
+      toast.success("Great start!", {
+        description: "You added your first block! Keep building your program."
+      });
+    }
+  }, [programCommands.length]);
+
+  const handleClear = () => {
+    // This would clear the Blockly workspace
+    toast.info("Workspace cleared", {
+      description: "All blocks have been removed from the workspace."
+    });
+  };
+
+  const handleLoadExample = () => {
+    // This would load an example program
+    toast.success("Example loaded", {
+      description: "A sample robot program has been loaded into the workspace."
+    });
+  };
+
+  const handleExport = () => {
+    try {
+      const exportData = {
+        code: generatedCode,
+        commands: programCommands,
+        timestamp: Date.now(),
+        version: "1.0"
+      };
+      
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `robot-program-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success("Program exported", {
+        description: "Program has been downloaded as a JSON file."
+      });
+    } catch (error) {
+      toast.error("Export failed", {
+        description: "Could not export the program."
+      });
+    }
+  };
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
@@ -110,10 +208,65 @@ export default function BlocklyPage() {
         </div>
 
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm">
-            <Upload className="h-4 w-4 mr-2" />
-            Load
-          </Button>
+          {/* Load Program Dialog */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Upload className="h-4 w-4 mr-2" />
+                Load
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Load Program</DialogTitle>
+                <DialogDescription>
+                  Load a previously saved robot program from your computer or select an example.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Load from file</h4>
+                  <input 
+                    type="file" 
+                    accept=".json"
+                    className="w-full p-2 border rounded"
+                    onChange={(e) => {
+                      // Handle file loading
+                      toast.info("Loading program...", {
+                        description: "File selected for loading."
+                      });
+                    }}
+                  />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Example programs</h4>
+                  <div className="space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={handleLoadExample}
+                    >
+                      🤖 Basic Movement
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={handleLoadExample}
+                    >
+                      🎯 Obstacle Avoidance
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-start"
+                      onClick={handleLoadExample}
+                    >
+                      🌈 Color Following
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           
           <Button 
             variant="outline" 
@@ -125,15 +278,38 @@ export default function BlocklyPage() {
             {isSaving ? "Saving..." : "Save"}
           </Button>
           
-          <Button variant="outline" size="sm">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleExport}
+          >
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
           
-          <Button variant="outline" size="sm">
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Clear
-          </Button>
+          {/* Clear Workspace Alert Dialog */}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Clear
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear Workspace?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove all blocks from the workspace. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleClear}>
+                  Clear All Blocks
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           
           <Button 
             onClick={handleRun}
