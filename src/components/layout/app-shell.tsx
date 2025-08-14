@@ -105,7 +105,7 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </div>
 
-        <main className="p-6 max-h-screen lg:pl-72 overflow-y-auto">
+        <main className="p-6 max-h-screen lg:pl-64 overflow-y-auto">
           {children}
         </main>
       
