@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { BlocklyWorkspace, ROBOT_TOOLBOX } from "~/components/blockly-workspace";
 import { 
   Play, 
   Square, 
@@ -18,7 +19,10 @@ import {
   ArrowRight,
   ArrowLeft,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
+  Gauge,
+  Target,
+  Thermometer
 } from "lucide-react";
 
 export default function BlocklyPage() {
@@ -108,9 +112,13 @@ export default function BlocklyPage() {
               <div>
                 <h4 className="text-sm font-medium text-muted-foreground mb-2 flex items-center gap-2">
                   <ArrowRight className="h-4 w-4" />
-                  Motion
+                  Motor Control
                 </h4>
                 <div className="space-y-2">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg text-sm cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Set Motor Power
+                  </div>
                   <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg text-sm cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 flex items-center gap-2">
                     <ArrowUp className="h-4 w-4" />
                     Move Forward
@@ -131,6 +139,14 @@ export default function BlocklyPage() {
                     <Square className="h-4 w-4" />
                     Stop Motors
                   </div>
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg text-sm cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 flex items-center gap-2">
+                    <RotateCcw className="h-4 w-4" />
+                    Set Servo Position
+                  </div>
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900 rounded-lg text-sm cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 flex items-center gap-2">
+                    <Gauge className="h-4 w-4" />
+                    Stepper Steps
+                  </div>
                 </div>
               </div>
 
@@ -143,15 +159,35 @@ export default function BlocklyPage() {
                 <div className="space-y-2">
                   <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg text-sm cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 flex items-center gap-2">
                     <Eye className="h-4 w-4" />
-                    Read Distance
+                    Read Ultrasonic Distance
                   </div>
                   <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg text-sm cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 flex items-center gap-2">
                     <Eye className="h-4 w-4" />
-                    Read Color
+                    Read Color Sensor
                   </div>
                   <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg text-sm cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 flex items-center gap-2">
                     <Volume2 className="h-4 w-4" />
-                    Touch Sensor
+                    Read Touch Sensor
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg text-sm cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 flex items-center gap-2">
+                    <RotateCcw className="h-4 w-4" />
+                    Read Gyro Angle
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg text-sm cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Read IR Sensor
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg text-sm cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Read Force Sensor
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg text-sm cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Read Distance (ToF)
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg text-sm cursor-pointer hover:bg-green-200 dark:hover:bg-green-800 flex items-center gap-2">
+                    <Thermometer className="h-4 w-4" />
+                    Read Temperature
                   </div>
                 </div>
               </div>
@@ -199,18 +235,13 @@ export default function BlocklyPage() {
 
         {/* Blockly Workspace */}
         <div className="flex-1 bg-muted/30">
-          <div className="h-full flex items-center justify-center">
-            <div className="text-center">
-              <Grid3X3 className="h-24 w-24 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-2xl font-semibold mb-2">Blockly Workspace</h3>
-              <p className="text-muted-foreground mb-4 max-w-sm">
-                Drag blocks from the palette to build your robot program visually
-              </p>
-              <div className="text-sm text-muted-foreground">
-                This will be replaced with the actual Blockly editor
-              </div>
-            </div>
-          </div>
+          <BlocklyWorkspace 
+            toolboxConfig={ROBOT_TOOLBOX}
+            onCodeChange={(code) => {
+              console.log("Generated code:", code);
+              // This would send the code to the controller
+            }}
+          />
         </div>
       </div>
 

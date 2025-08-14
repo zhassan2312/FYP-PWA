@@ -17,21 +17,28 @@ export interface Controller {
 export interface Sensor {
   id: string;
   name: string;
-  type: "ultrasonic" | "color" | "touch" | "gyro" | "light" | "sound";
+  type: "ultrasonic" | "ir" | "touch" | "color" | "gyro" | "force" | "distance_tof" | "temperature";
   port: string;
   value: number | string;
   unit: string;
   isActive: boolean;
+  range?: {
+    min: number;
+    max: number;
+  };
 }
 
 export interface Motor {
   id: string;
   name: string;
-  type: "large" | "medium" | "servo";
+  type: "dc" | "servo" | "stepper";
   port: string;
-  power: number;
+  power: number; // -100 to 100 (negative for reverse)
   position: number;
   isRunning: boolean;
+  driverChip: "DRV8833" | "TB6612FNG";
+  maxCurrent: number; // in Amperes
+  voltage: number; // operating voltage
 }
 
 export interface Program {
@@ -61,16 +68,17 @@ export const mockController: Controller = {
   lastSeen: new Date(),
 };
 
-// Mock sensors data
+// Mock sensors data - updated with your specified sensors
 export const mockSensors: Sensor[] = [
   {
     id: "sensor-1",
     name: "Ultrasonic Sensor",
     type: "ultrasonic",
     port: "1",
-    value: 25,
+    value: 25.4,
     unit: "cm",
     isActive: true,
+    range: { min: 2, max: 400 },
   },
   {
     id: "sensor-2",
@@ -98,37 +106,87 @@ export const mockSensors: Sensor[] = [
     value: 45,
     unit: "degrees",
     isActive: true,
+    range: { min: -180, max: 180 },
+  },
+  {
+    id: "sensor-5",
+    name: "IR Sensor",
+    type: "ir",
+    port: "5",
+    value: 512,
+    unit: "intensity",
+    isActive: true,
+    range: { min: 0, max: 1023 },
+  },
+  {
+    id: "sensor-6",
+    name: "Force Sensor",
+    type: "force",
+    port: "6",
+    value: 2.5,
+    unit: "N",
+    isActive: false,
+    range: { min: 0, max: 10 },
+  },
+  {
+    id: "sensor-7",
+    name: "Distance Sensor (ToF)",
+    type: "distance_tof",
+    port: "7",
+    value: 150,
+    unit: "mm",
+    isActive: true,
+    range: { min: 10, max: 2000 },
+  },
+  {
+    id: "sensor-8",
+    name: "Temperature Sensor",
+    type: "temperature",
+    port: "8",
+    value: 23.5,
+    unit: "°C",
+    isActive: false,
+    range: { min: -40, max: 125 },
   },
 ];
 
-// Mock motors data
+// Mock motors data - updated with H-Bridge specifications
 export const mockMotors: Motor[] = [
   {
     id: "motor-a",
     name: "Left Drive Motor",
-    type: "large",
+    type: "dc",
     port: "A",
     power: 0,
     position: 0,
     isRunning: false,
+    driverChip: "TB6612FNG",
+    maxCurrent: 1.2,
+    voltage: 6.0,
   },
   {
     id: "motor-b",
     name: "Right Drive Motor",
-    type: "large",
+    type: "dc",
     port: "B",
     power: 0,
     position: 0,
     isRunning: false,
+    driverChip: "TB6612FNG",
+    maxCurrent: 1.2,
+    voltage: 6.0,
   },
   {
     id: "motor-c",
-    name: "Arm Motor",
-    type: "medium",
+    name: "Arm Servo Motor",
+    type: "servo",
     port: "C",
     power: 0,
     position: 90,
     isRunning: false,
+    driverChip: "DRV8833",
+    maxCurrent: 1.5,
+    voltage: 5.0,
   },
 ];
 
