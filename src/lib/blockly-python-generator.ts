@@ -9,6 +9,8 @@ function ensureGeneratorsInitialized() {
   if (generatorsInitialized) return true;
   
   try {
+    setupControllerGenerators();
+    setupGPIOGenerators();
     setupMotorGenerators();
     setupSensorGenerators();
     setupControlGenerators();
@@ -373,6 +375,75 @@ function getBlockValue(block: any, inputName: string, defaultValue: any): any {
     }
   }
   return defaultValue;
+}
+
+// ==================================================
+// CONTROLLER CONFIGURATION BLOCKS - PYTHON GENERATORS
+// ==================================================
+
+function setupControllerGenerators() {
+  pythonGenerator.forBlock['setup_controller'] = function(block: any, generator: any) {
+    const controllerType = block.getFieldValue('CONTROLLER_TYPE');
+    const communication = block.getFieldValue('COMMUNICATION');
+    
+    const code = `# Controller Setup\n` +
+                 `controller = Controller('${controllerType}', '${communication}')\n` +
+                 `controller.initialize()\n\n`;
+    return code;
+  };
+
+  pythonGenerator.forBlock['configure_pin'] = function(block: any, generator: any) {
+    const pin = block.getFieldValue('PIN');
+    const mode = block.getFieldValue('MODE');
+    const device = block.getFieldValue('DEVICE');
+    
+    const code = `controller.configure_pin('${pin}', '${mode}', device='${device}')\n`;
+    return code;
+  };
+
+  pythonGenerator.forBlock['set_pin_mode'] = function(block: any, generator: any) {
+    const pin = block.getFieldValue('PIN');
+    const mode = block.getFieldValue('MODE');
+    
+    const code = `controller.set_pin_mode('${pin}', '${mode}')\n`;
+    return code;
+  };
+}
+
+// ==================================================
+// GPIO CONTROL BLOCKS - PYTHON GENERATORS
+// ==================================================
+
+function setupGPIOGenerators() {
+  pythonGenerator.forBlock['digital_write'] = function(block: any, generator: any) {
+    const pin = block.getFieldValue('PIN');
+    const state = block.getFieldValue('STATE');
+    
+    const code = `controller.digital_write('${pin}', ${state === 'HIGH' ? '1' : '0'})\n`;
+    return code;
+  };
+
+  pythonGenerator.forBlock['digital_read'] = function(block: any, generator: any) {
+    const pin = block.getFieldValue('PIN');
+    
+    const code = `controller.digital_read('${pin}')`;
+    return [code, Order.ATOMIC];
+  };
+
+  pythonGenerator.forBlock['analog_write'] = function(block: any, generator: any) {
+    const pin = block.getFieldValue('PIN');
+    const value = generator.valueToCode(block, 'VALUE', Order.ATOMIC) || '0';
+    
+    const code = `controller.analog_write('${pin}', ${value})\n`;
+    return code;
+  };
+
+  pythonGenerator.forBlock['analog_read'] = function(block: any, generator: any) {
+    const pin = block.getFieldValue('PIN');
+    
+    const code = `controller.analog_read('${pin}')`;
+    return [code, Order.ATOMIC];
+  };
 }
 
 // Initialize generators when module loads (in browser environment)
