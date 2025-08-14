@@ -18,28 +18,22 @@ interface ProgramHeaderProps {
   isRunning: boolean;
   isSaving: boolean;
   language: "python" | "javascript";
-  selectedProgram?: { name?: string; id?: string };
-  programs: Array<{ id: string; name: string }>;
   onRun: () => void;
   onStop: () => void;
   onSave: () => void;
   onReset: () => void;
   onLanguageChange: (language: "python" | "javascript") => void;
-  onProgramSelect: (programId: string) => void;
 }
 
 export default function ProgramHeader({
   isRunning,
   isSaving,
   language,
-  selectedProgram,
-  programs,
   onRun,
   onStop,
   onSave,
   onReset,
-  onLanguageChange,
-  onProgramSelect
+  onLanguageChange
 }: ProgramHeaderProps) {
   
   const exportProgram = () => {
@@ -54,31 +48,16 @@ export default function ProgramHeader({
 
   return (
     <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-white to-gray-50 shadow-sm">
-      {/* Left Section - Title and Program Selection */}
+      {/* Left Section - Title */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">
           <div className="p-2 bg-blue-100 rounded-lg">
             <Code className="h-5 w-5 text-blue-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-800">Program Editor</h1>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4 text-gray-500" />
-            <span className="font-medium text-sm text-gray-600">Project:</span>
-          </div>
-          <select 
-            className="p-2 border border-gray-300 rounded-md bg-white shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            value={selectedProgram?.id || ""}
-            onChange={(e) => onProgramSelect(e.target.value)}
-          >
-            {programs.map((program) => (
-              <option key={program.id} value={program.id}>
-                {program.name}
-              </option>
-            ))}
-          </select>
+          <Badge variant="outline" className="text-xs">
+            Controller Programming
+          </Badge>
         </div>
       </div>
 

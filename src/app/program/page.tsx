@@ -5,7 +5,6 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Code, Terminal, Cpu, Settings } from 'lucide-react';
-import { mockPrograms, type Program } from '~/lib/mock-data';
 
 import {
   ProgramHeader,
@@ -27,13 +26,12 @@ interface CodeError {
 }
 
 export default function ProgramPage() {
-  const [selectedProgram, setSelectedProgram] = useState<Program | null>(mockPrograms[0] || null);
-  const [code, setCode] = useState(selectedProgram?.code || "");
+  const [code, setCode] = useState("# Controller Programming Environment\n# Write your Python code to control sensors and motors\n\ndef main():\n    # Your code here\n    pass\n\nif __name__ == '__main__':\n    main()");
   const [language, setLanguage] = useState<"python" | "javascript">("python");
   const [activeTab, setActiveTab] = useState("editor");
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [consoleOutput, setConsoleOutput] = useState<string[]>(["🚀 Programming environment ready..."]);
+  const [consoleOutput, setConsoleOutput] = useState<string[]>(["🚀 Controller programming environment ready...", "📡 Awaiting connection to main controller board..."]);
   const [terminalHistory, setTerminalHistory] = useState<string[]>(["$ Terminal ready"]);
   const [terminalInput, setTerminalInput] = useState("");
   const [errors, setErrors] = useState<CodeError[]>([]);
@@ -118,31 +116,31 @@ export default function ProgramPage() {
 
   const handleRun = () => {
     setIsRunning(true);
-    const newOutput = `🚀 Starting ${language} program execution...`;
-    setConsoleOutput(prev => [...prev, newOutput, "⚙️ Initializing runtime environment...", "▶️ Program running..."]);
+    const newOutput = `🚀 Starting ${language} program execution on controller...`;
+    setConsoleOutput(prev => [...prev, newOutput, "⚙️ Initializing controller board...", "📡 Connecting to sensors and motors...", "▶️ Program running on controller..."]);
     setTimeout(() => {
       setIsRunning(false);
-      setConsoleOutput(prev => [...prev, "✅ Program completed successfully.", `⏱️ Execution time: ${Math.random() * 5 + 1}s`]);
+      setConsoleOutput(prev => [...prev, "✅ Controller program completed successfully.", `⏱️ Execution time: ${(Math.random() * 5 + 1).toFixed(2)}s`, "📊 All sensors and motors responded correctly."]);
     }, 3000);
   };
 
   const handleStop = () => {
     setIsRunning(false);
-    setConsoleOutput(prev => [...prev, "🛑 Program execution stopped by user."]);
+    setConsoleOutput(prev => [...prev, "🛑 Controller program execution stopped by user.", "⚠️ All motors stopped, sensors in standby mode."]);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
-    setConsoleOutput(prev => [...prev, "💾 Saving program..."]);
+    setConsoleOutput(prev => [...prev, "💾 Saving controller program to board..."]);
     setTimeout(() => {
       setIsSaving(false);
-      setConsoleOutput(prev => [...prev, "✅ Program saved successfully."]);
+      setConsoleOutput(prev => [...prev, "✅ Controller program saved successfully.", "📋 Program uploaded to main controller board."]);
     }, 1000);
   };
 
   const handleReset = () => {
-    setCode("");
-    setConsoleOutput(["🚀 Programming environment ready...", "📝 Workspace reset"]);
+    setCode("# Controller Programming Environment\n# Write your Python code to control sensors and motors\n\ndef main():\n    # Your code here\n    pass\n\nif __name__ == '__main__':\n    main()");
+    setConsoleOutput(["🚀 Controller programming environment ready...", "📝 Workspace reset", "📡 Awaiting connection to main controller board..."]);
     setErrors([]);
   };
 
@@ -151,21 +149,30 @@ export default function ProgramPage() {
       const command = terminalInput.trim();
       setTerminalHistory(prev => [...prev, `$ ${command}`]);
       
-      // Simulate command execution
+      // Simulate command execution with controller-specific commands
       setTimeout(() => {
         let response = "";
         switch (command.toLowerCase()) {
           case 'help':
-            response = "Available commands: ls, pwd, python, pip, clear, exit";
+            response = "Available commands: ls, pwd, python, pip, status, sensors, motors, clear, exit";
             break;
           case 'ls':
-            response = "main.py  requirements.txt  README.md";
+            response = "controller_main.py  sensor_config.py  motor_control.py  requirements.txt";
             break;
           case 'pwd':
-            response = "/home/user/FYP-PWA";
+            response = "/home/controller/FYP-PWA";
             break;
           case 'python --version':
             response = "Python 3.9.7";
+            break;
+          case 'status':
+            response = "Controller Board: Connected | Sensors: 3 active | Motors: 2 ready";
+            break;
+          case 'sensors':
+            response = "Sensor 1: Temperature (Active) | Sensor 2: Distance (Active) | Sensor 3: Light (Standby)";
+            break;
+          case 'motors':
+            response = "Motor 1: Servo (Ready) | Motor 2: Stepper (Ready)";
             break;
           case 'clear':
             setTerminalHistory(["$ Terminal ready"]);
@@ -178,14 +185,6 @@ export default function ProgramPage() {
       }, 500);
       
       setTerminalInput("");
-    }
-  };
-
-  const handleProgramSelect = (programId: string) => {
-    const program = mockPrograms.find((p: Program) => p.id === programId);
-    if (program) {
-      setSelectedProgram(program);
-      setCode(program.code || "");
     }
   };
 
@@ -203,14 +202,11 @@ export default function ProgramPage() {
         isRunning={isRunning}
         isSaving={isSaving}
         language={language}
-        selectedProgram={selectedProgram || undefined}
-        programs={mockPrograms}
         onRun={handleRun}
         onStop={handleStop}
         onSave={handleSave}
         onReset={handleReset}
         onLanguageChange={setLanguage}
-        onProgramSelect={handleProgramSelect}
       />
 
       {/* Main Content */}
@@ -255,7 +251,6 @@ export default function ProgramPage() {
                 wordWrap={wordWrap}
                 errors={errors}
                 showErrors={showErrors}
-                selectedProgram={selectedProgram || undefined}
                 onCodeChange={setCode}
                 onShowErrorsToggle={() => setShowErrors(!showErrors)}
               />
@@ -265,7 +260,7 @@ export default function ProgramPage() {
               <ProgramConsole
                 consoleOutput={consoleOutput}
                 isRunning={isRunning}
-                onClear={() => setConsoleOutput(["🚀 Programming environment ready..."])}
+                onClear={() => setConsoleOutput(["🚀 Controller programming environment ready...", "📡 Awaiting connection to main controller board..."])}
               />
             </TabsContent>
 

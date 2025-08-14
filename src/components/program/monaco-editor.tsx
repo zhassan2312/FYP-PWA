@@ -38,7 +38,6 @@ interface MonacoCodeEditorProps {
   wordWrap: boolean;
   errors: CodeError[];
   showErrors: boolean;
-  selectedProgram?: { name?: string };
   onCodeChange: (code: string) => void;
   onShowErrorsToggle: () => void;
 }
@@ -51,7 +50,6 @@ export default function MonacoCodeEditor({
   wordWrap,
   errors,
   showErrors,
-  selectedProgram,
   onCodeChange,
   onShowErrorsToggle
 }: MonacoCodeEditorProps) {
@@ -107,7 +105,7 @@ export default function MonacoCodeEditor({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1e1e1e] border border-[#3e3e42] rounded-md text-xs text-white shadow-sm">
             <Code className="h-3 w-3 text-blue-400" />
-            <span className="font-medium">{selectedProgram?.name || "main.py"}</span>
+            <span className="font-medium">controller_main.py</span>
           </div>
           
           {errors.length > 0 && (
@@ -164,7 +162,7 @@ export default function MonacoCodeEditor({
                       {error.message}
                     </div>
                     <div className="text-[#888888] mt-1 text-xs">
-                      {selectedProgram?.name || "main.py"} • Line {error.line}, Column {error.column} • {error.type}
+                      controller_main.py • Line {error.line}, Column {error.column} • {error.type}
                     </div>
                   </div>
                 </div>
