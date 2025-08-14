@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as Blockly from 'blockly';
-import { javascriptGenerator } from 'blockly/javascript';
+import { generatePythonProgram, initializePythonGenerators } from '~/lib/blockly-python-generator';
 import '../lib/blockly-blocks'; // Import our custom blocks
 import { generateRobotCommands } from '../lib/blockly-blocks';
 
@@ -35,8 +35,8 @@ function BlocklyWorkspaceInner({
     if (!workspace.current) return;
 
     try {
-      // Generate JavaScript code
-      const code = javascriptGenerator.workspaceToCode(workspace.current);
+      // Generate Python code
+      const code = generatePythonProgram(workspace.current);
       onCodeChangeRef.current?.(code);
 
       // Generate robot commands for WebSocket communication
@@ -82,6 +82,9 @@ function BlocklyWorkspaceInner({
 
         workspace.current = ws;
         setIsInitialized(true);
+
+        // Initialize Python generators for our custom blocks
+        initializePythonGenerators();
 
         // Listen for workspace changes
         workspace.current.addChangeListener(handleWorkspaceChange);

@@ -481,6 +481,34 @@ export default function BlocklyPage() {
         </div>
       </div>
 
+      {/* Generated Python Code Display */}
+      {generatedCode && (
+        <div className="border-t bg-muted/30 p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium flex items-center gap-2">
+              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+              Generated Python Code
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(generatedCode);
+                toast.success("Python code copied to clipboard!");
+              }}
+              className="text-xs"
+            >
+              Copy Code
+            </Button>
+          </div>
+          <div className="bg-background border rounded-lg p-3 max-h-48 overflow-y-auto">
+            <pre className="text-xs font-mono text-foreground whitespace-pre-wrap">
+              <code>{generatedCode}</code>
+            </pre>
+          </div>
+        </div>
+      )}
+
       {/* Status Bar */}
       <div className="border-t bg-background p-2 flex items-center justify-between">
         <div className="flex items-center gap-4 text-sm">
