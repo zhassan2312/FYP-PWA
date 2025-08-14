@@ -1,6 +1,4 @@
 import * as Blockly from 'blockly';
-// Import the JavaScript generator
-import { javascriptGenerator, Order } from 'blockly/javascript';
 
 // Color schemes for different block categories
 const MOTOR_COLOR = '#4A90E2';
@@ -264,152 +262,22 @@ Blockly.Blocks['control_wait'] = {
 };
 
 // ==================================================
-// CODE GENERATORS (JavaScript)
+// INITIALIZATION FUNCTION
 // ==================================================
 
-// Motor control generators
-javascriptGenerator.forBlock['motor_set_power'] = function(block: any) {
-  const motor = block.getFieldValue('MOTOR');
-  const power = javascriptGenerator.valueToCode(block, 'POWER', Order.ATOMIC) || '0';
-  return `robot.setMotorPower('${motor}', ${power});\n`;
-};
-
-javascriptGenerator.forBlock['motor_move'] = function(block: any) {
-  const direction = block.getFieldValue('DIRECTION');
-  const duration = javascriptGenerator.valueToCode(block, 'DURATION', Order.ATOMIC) || '1';
-  return `robot.move('${direction}', ${duration});\n`;
-};
-
-javascriptGenerator.forBlock['motor_stop'] = function(block: any) {
-  return 'robot.stopMotors();\n';
-};
-
-javascriptGenerator.forBlock['servo_position'] = function(block: any) {
-  const servo = block.getFieldValue('SERVO');
-  const angle = javascriptGenerator.valueToCode(block, 'ANGLE', Order.ATOMIC) || '90';
-  return `robot.setServo('${servo}', ${angle});\n`;
-};
-
-// Sensor generators
-javascriptGenerator.forBlock['sensor_ultrasonic'] = function(block: any) {
-  const sensor = block.getFieldValue('SENSOR');
-  const code = `robot.readUltrasonic('${sensor}')`;
-  return [code, Order.FUNCTION_CALL];
-};
-
-javascriptGenerator.forBlock['sensor_color'] = function(block: any) {
-  const mode = block.getFieldValue('MODE');
-  const code = `robot.readColor('${mode}')`;
-  return [code, Order.FUNCTION_CALL];
-};
-
-javascriptGenerator.forBlock['sensor_touch'] = function(block: any) {
-  const sensor = block.getFieldValue('SENSOR');
-  const code = `robot.readTouch('${sensor}')`;
-  return [code, Order.FUNCTION_CALL];
-};
-
-javascriptGenerator.forBlock['sensor_gyro'] = function(block: any) {
-  const axis = block.getFieldValue('AXIS');
-  const code = `robot.readGyro('${axis}')`;
-  return [code, Order.FUNCTION_CALL];
-};
-
-javascriptGenerator.forBlock['sensor_ir'] = function(block: any) {
-  const sensor = block.getFieldValue('SENSOR');
-  const mode = block.getFieldValue('MODE');
-  const code = `robot.readIR('${sensor}', '${mode}')`;
-  return [code, Order.FUNCTION_CALL];
-};
-
-javascriptGenerator.forBlock['sensor_force'] = function(block: any) {
-  const sensor = block.getFieldValue('SENSOR');
-  const code = `robot.readForce('${sensor}')`;
-  return [code, Order.FUNCTION_CALL];
-};
-
-javascriptGenerator.forBlock['sensor_distance_tof'] = function(block: any) {
-  const sensor = block.getFieldValue('SENSOR');
-  const code = `robot.readToF('${sensor}')`;
-  return [code, Order.FUNCTION_CALL];
-};
-
-javascriptGenerator.forBlock['sensor_temperature'] = function(block: any) {
-  const unit = block.getFieldValue('UNIT');
-  const code = `robot.readTemperature('${unit}')`;
-  return [code, Order.FUNCTION_CALL];
-};
-
-javascriptGenerator.forBlock['control_wait'] = function(block: any) {
-  const duration = javascriptGenerator.valueToCode(block, 'DURATION', Order.ATOMIC) || '1';
-  return `robot.wait(${duration});\n`;
-};
-
-// ==================================================
-// JSON IR GENERATORS (for WebSocket communication)
-// ==================================================
-
-// Generate JSON command format for robot communication
-export function generateRobotCommands(workspace: any): any[] {
-  const blocks = workspace.getTopBlocks(true);
-  const commands: any[] = [];
+/**
+ * Initialize all custom blocks
+ * Must be called before using the blocks in a workspace
+ */
+function initializeCustomBlocks() {
+  console.log('Initializing custom robot blocks...');
   
-  blocks.forEach((block: any) => {
-    const command = blockToCommand(block);
-    if (command) {
-      commands.push(command);
-    }
-  });
+  // Blocks are already defined above, but we can do any additional setup here
+  // For example, adding them to the toolbox categories
   
-  return commands;
+  console.log('Custom robot blocks initialized successfully');
+  return true;
 }
 
-function blockToCommand(block: any): any {
-  if (!block) return null;
-  
-  const type = block.type;
-  
-  switch (type) {
-    case 'motor_set_power':
-      return {
-        type: 'motor_power',
-        motor: block.getFieldValue('MOTOR'),
-        power: parseFloat(block.getInputTargetBlock('POWER')?.getFieldValue('NUM') || '0'),
-        timestamp: Date.now()
-      };
-      
-    case 'motor_move':
-      return {
-        type: 'motor_move',
-        direction: block.getFieldValue('DIRECTION'),
-        duration: parseFloat(block.getInputTargetBlock('DURATION')?.getFieldValue('NUM') || '1') * 1000,
-        timestamp: Date.now()
-      };
-      
-    case 'motor_stop':
-      return {
-        type: 'motor_stop',
-        timestamp: Date.now()
-      };
-      
-    case 'servo_position':
-      return {
-        type: 'servo_control',
-        servo: block.getFieldValue('SERVO'),
-        angle: parseFloat(block.getInputTargetBlock('ANGLE')?.getFieldValue('NUM') || '90'),
-        timestamp: Date.now()
-      };
-      
-    case 'control_wait':
-      return {
-        type: 'wait',
-        duration: parseFloat(block.getInputTargetBlock('DURATION')?.getFieldValue('NUM') || '1') * 1000,
-        timestamp: Date.now()
-      };
-      
-    default:
-      return null;
-  }
-}
-
-export { Blockly, javascriptGenerator };
+// Export the Blockly instance and initialization function
+export { Blockly, initializeCustomBlocks };

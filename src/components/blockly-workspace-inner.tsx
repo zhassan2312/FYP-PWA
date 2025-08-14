@@ -2,9 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import * as Blockly from 'blockly';
-import { generatePythonProgram, initializePythonGenerators } from '~/lib/blockly-python-generator';
-import '../lib/blockly-blocks'; // Import our custom blocks
-import { generateRobotCommands } from '../lib/blockly-blocks';
+import { generatePythonCode, generateRobotCommands, initializePythonGenerator } from '~/lib/blockly-python-generator';
+import { initializeCustomBlocks } from '~/lib/blockly-blocks';
 
 export interface BlocklyWorkspaceInnerProps {
   toolboxConfig: string;
@@ -32,24 +31,39 @@ function BlocklyWorkspaceInner({
   }, [onCodeChange, onProgramChange]);
 
   const handleWorkspaceChange = useCallback(() => {
-    if (!workspace.current) return;
+    if (!workspace.current) {
+      console.log('Workspace not available');
+      return;
+    }
 
     try {
+      console.log('Workspace changed, generating code...');
+      
       // Generate Python code
-      const code = generatePythonProgram(workspace.current);
+      const code = generatePythonCode(workspace.current);
+      console.log('Generated Python code:', code);
       onCodeChangeRef.current?.(code);
 
       // Generate robot commands for WebSocket communication
       const commands = generateRobotCommands(workspace.current);
+      console.log('Generated robot commands:', commands);
       onProgramChangeRef.current?.(commands);
     } catch (error) {
       console.error('Error generating code:', error);
+      // Fallback to empty values
+      onCodeChangeRef.current?.('// Error generating code. Please check console for details.');
+      onProgramChangeRef.current?.([]);
     }
   }, []); // Empty dependency array since we use refs
 
   useEffect(() => {
     if (blocklyDiv.current && !isInitialized) {
       try {
+        console.log('Initializing Blockly workspace...');
+        
+        // Initialize custom blocks first
+        initializeCustomBlocks();
+        
         // Initialize Blockly workspace
         const ws = Blockly.inject(blocklyDiv.current, {
           toolbox: toolboxConfig,
@@ -83,13 +97,7 @@ function BlocklyWorkspaceInner({
         workspace.current = ws;
         setIsInitialized(true);
 
-        // Initialize Python generators for our custom blocks
-        initializePythonGenerators();
-
-        // Listen for workspace changes
-        workspace.current.addChangeListener(handleWorkspaceChange);
-
-        // Load a sample program to demonstrate functionality
+        // Define sample program XML
         const sampleXml = `
           <xml xmlns="https://developers.google.com/blockly/xml">
             <block type="motor_move" id="start_block" x="20" y="20">
@@ -124,13 +132,80 @@ function BlocklyWorkspaceInner({
             </block>
           </xml>
         `;
-        
-        try {
-          const xml = Blockly.utils.xml.textToDom(sampleXml);
-          Blockly.Xml.domToWorkspace(xml, workspace.current);
-        } catch (error) {
-          console.log('Sample program not loaded:', error);
-        }
+
+        // Initialize Python generator and set up listeners
+        const initializePythonAndListeners = async () => {
+          try {
+            console.log('Starting Python generator initialization...');
+            
+            // Force import of Python generator with retry logic
+            let attempts = 0;
+            const maxAttempts = 5;
+            let success = false;
+            
+            while (attempts < maxAttempts && !success) {
+              try {
+                await import('blockly/python');
+                console.log('Python generator module imported, attempt:', attempts + 1);
+                
+                // Wait a bit for the module to fully initialize
+                await new Promise(resolve => setTimeout(resolve, 200));
+                
+                // Try to initialize our custom Python generators
+                success = await initializePythonGenerator();
+                if (success) {
+                  console.log('Custom Python generators initialized successfully');
+                  break;
+                } else {
+                  console.warn(`Failed to initialize Python generators, attempt ${attempts + 1}`);
+                  await new Promise(resolve => setTimeout(resolve, 300));
+                }
+              } catch (error) {
+                console.warn(`Import attempt ${attempts + 1} failed:`, error);
+                await new Promise(resolve => setTimeout(resolve, 300));
+              }
+              attempts++;
+            }
+            
+            if (!success) {
+              console.error('Failed to initialize Python generators after all attempts');
+            }
+            
+            // Listen for workspace changes regardless of generator status
+            workspace.current.addChangeListener(handleWorkspaceChange);
+            console.log('Workspace change listener added');
+
+            // Load sample program
+            try {
+              const xml = Blockly.utils.xml.textToDom(sampleXml);
+              Blockly.Xml.domToWorkspace(xml, workspace.current);
+              console.log('Sample program loaded');
+            } catch (error) {
+              console.log('Sample program not loaded:', error);
+            }
+
+            // Trigger initial code generation after loading sample
+            setTimeout(() => {
+              console.log('Triggering initial code generation...');
+              handleWorkspaceChange();
+            }, 300);
+            
+          } catch (error) {
+            console.error('Failed to initialize Python system:', error);
+            // Still add the listener and load sample
+            workspace.current.addChangeListener(handleWorkspaceChange);
+            
+            try {
+              const xml = Blockly.utils.xml.textToDom(sampleXml);
+              Blockly.Xml.domToWorkspace(xml, workspace.current);
+            } catch (sampleError) {
+              console.log('Sample program not loaded:', sampleError);
+            }
+          }
+        };
+
+        // Initialize Python generator and listeners
+        initializePythonAndListeners();
 
       } catch (error) {
         console.error('Failed to initialize Blockly:', error);

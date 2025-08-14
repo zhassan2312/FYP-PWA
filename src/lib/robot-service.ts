@@ -51,10 +51,12 @@ class RobotService {
   private isExecuting = false;
 
   constructor() {
-    // Initialize with mock WebSocket for development
-    // Only initialize in browser environment
+    // Only initialize mock data in browser environment to avoid hydration issues
     if (typeof window !== 'undefined') {
-      this.initializeMockConnection();
+      // Delay initialization to ensure it happens after hydration
+      setTimeout(() => {
+        this.initializeMockConnection();
+      }, 100);
     }
   }
 
