@@ -20,7 +20,7 @@ interface Port {
   type: "motor" | "sensor" | "input" | "output";
   connected?: {
     name: string;
-    deviceType: "large-motor" | "medium-motor" | "ultrasonic" | "color" | "touch" | "gyro" | "light" | "sound" | "temperature" | "custom";
+    deviceType: "large-motor" | "medium-motor" | "servo-motor" | "stepper-motor" | "ultrasonic" | "color" | "touch" | "gyro" | "light" | "sound" | "temperature" | "custom";
   };
 }
 
@@ -50,6 +50,8 @@ export function RobotConfig({ controller, ports, onConfigurePort, onAddComponent
     switch (deviceType) {
       case "large-motor":
       case "medium-motor":
+      case "servo-motor":
+      case "stepper-motor":
         return Zap;
       case "ultrasonic":
       case "color":
@@ -72,6 +74,8 @@ export function RobotConfig({ controller, ports, onConfigurePort, onAddComponent
     switch (deviceType) {
       case "large-motor":
       case "medium-motor":
+      case "servo-motor":
+      case "stepper-motor":
         return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300";
       case "ultrasonic":
       case "color":

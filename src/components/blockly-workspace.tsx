@@ -1,70 +1,51 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-
-// Blockly integration component - this would use the actual Blockly library
-// For now, this is a placeholder that shows how it would be structured
+import { useEffect, useState } from "react";
 
 interface BlocklyWorkspaceProps {
   toolboxConfig: string;
   onCodeChange?: (code: string) => void;
+  onProgramChange?: (commands: any[]) => void;
 }
 
-export function BlocklyWorkspace({ toolboxConfig, onCodeChange }: BlocklyWorkspaceProps) {
-  const blocklyDiv = useRef<HTMLDivElement>(null);
-  const workspace = useRef<any>(null);
+export function BlocklyWorkspace({ toolboxConfig, onCodeChange, onProgramChange }: BlocklyWorkspaceProps) {
+  const [isClient, setIsClient] = useState(false);
+  const [BlocklyComponent, setBlocklyComponent] = useState<React.ComponentType<any> | null>(null);
 
   useEffect(() => {
-    if (blocklyDiv.current) {
-      // This is where you would initialize Blockly
-      // const workspace = Blockly.inject(blocklyDiv.current, {
-      //   toolbox: toolboxConfig,
-      //   theme: Blockly.Themes.Modern,
-      //   grid: {
-      //     spacing: 20,
-      //     length: 3,
-      //     colour: '#ccc',
-      //     snap: true
-      //   },
-      //   zoom: {
-      //     controls: true,
-      //     wheel: true,
-      //     startScale: 1.0,
-      //     maxScale: 3,
-      //     minScale: 0.3,
-      //     scaleSpeed: 1.2
-      //   }
-      // });
-
-      // workspace.current = workspace;
-
-      // // Listen for changes and generate code
-      // workspace.addChangeListener(() => {
-      //   const code = Blockly.JavaScript.workspaceToCode(workspace);
-      //   onCodeChange?.(code);
-      // });
-    }
-
-    return () => {
-      // Cleanup
-      workspace.current?.dispose();
+    // Only import and set the component on the client side
+    const loadBlocklyComponent = async () => {
+      try {
+        const { default: BlocklyWorkspaceInner } = await import('./blockly-workspace-inner');
+        setBlocklyComponent(() => BlocklyWorkspaceInner);
+        setIsClient(true);
+      } catch (error) {
+        console.error('Failed to load Blockly component:', error);
+      }
     };
-  }, [toolboxConfig, onCodeChange]);
 
-  return (
-    <div 
-      ref={blocklyDiv} 
-      className="w-full h-full bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center"
-    >
-      <div className="text-center text-gray-500 dark:text-gray-400">
-        <div className="text-2xl mb-2">🔧</div>
-        <div className="text-lg font-medium mb-1">Blockly Workspace</div>
-        <div className="text-sm">Drag blocks from the palette to build your program</div>
-        <div className="text-xs mt-2 text-gray-400">
-          (Actual Blockly integration would render here)
+    loadBlocklyComponent();
+  }, []);
+
+  // Don't render anything until we're on the client and component is loaded
+  if (!isClient || !BlocklyComponent) {
+    return (
+      <div className="w-full h-full bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg flex items-center justify-center">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          <div className="text-2xl mb-2">🔧</div>
+          <div className="text-lg font-medium mb-1">Loading Blockly...</div>
+          <div className="text-sm">Initializing workspace</div>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <BlocklyComponent 
+      toolboxConfig={toolboxConfig}
+      onCodeChange={onCodeChange}
+      onProgramChange={onProgramChange}
+    />
   );
 }
 
@@ -74,7 +55,7 @@ export const ROBOT_TOOLBOX = `
   
   <!-- Motor Control Category -->
   <category name="Motor Control" colour="#4A90E2">
-    <block type="motor_power">
+    <block type="motor_set_power">
       <field name="MOTOR">left</field>
       <value name="POWER">
         <shadow type="math_number">
@@ -86,15 +67,7 @@ export const ROBOT_TOOLBOX = `
       <field name="DIRECTION">forward</field>
       <value name="DURATION">
         <shadow type="math_number">
-          <field name="NUM">1000</field>
-        </shadow>
-      </value>
-    </block>
-    <block type="motor_turn">
-      <field name="DIRECTION">left</field>
-      <value name="ANGLE">
-        <shadow type="math_number">
-          <field name="NUM">90</field>
+          <field name="NUM">1</field>
         </shadow>
       </value>
     </block>
@@ -107,14 +80,6 @@ export const ROBOT_TOOLBOX = `
         </shadow>
       </value>
     </block>
-    <block type="stepper_steps">
-      <field name="STEPPER">stepper1</field>
-      <value name="STEPS">
-        <shadow type="math_number">
-          <field name="NUM">200</field>
-        </shadow>
-      </value>
-    </block>
   </category>
 
   <!-- Sensors Category -->
@@ -123,17 +88,17 @@ export const ROBOT_TOOLBOX = `
       <field name="SENSOR">ultrasonic1</field>
     </block>
     <block type="sensor_color">
-      <field name="SENSOR">color1</field>
+      <field name="MODE">rgb</field>
     </block>
     <block type="sensor_touch">
       <field name="SENSOR">touch1</field>
     </block>
     <block type="sensor_gyro">
-      <field name="SENSOR">gyro1</field>
       <field name="AXIS">x</field>
     </block>
     <block type="sensor_ir">
       <field name="SENSOR">ir1</field>
+      <field name="MODE">analog</field>
     </block>
     <block type="sensor_force">
       <field name="SENSOR">force1</field>
@@ -142,7 +107,7 @@ export const ROBOT_TOOLBOX = `
       <field name="SENSOR">tof1</field>
     </block>
     <block type="sensor_temperature">
-      <field name="SENSOR">temp1</field>
+      <field name="UNIT">celsius</field>
     </block>
   </category>
 
@@ -162,8 +127,12 @@ export const ROBOT_TOOLBOX = `
     <block type="controls_whileUntil">
       <field name="MODE">WHILE</field>
     </block>
-    <block type="controls_flow_statements">
-      <field name="FLOW">BREAK</field>
+    <block type="control_wait">
+      <value name="DURATION">
+        <shadow type="math_number">
+          <field name="NUM">1</field>
+        </shadow>
+      </value>
     </block>
   </category>
 
@@ -179,8 +148,6 @@ export const ROBOT_TOOLBOX = `
     <block type="logic_boolean">
       <field name="BOOL">TRUE</field>
     </block>
-    <block type="logic_null"></block>
-    <block type="logic_ternary"></block>
   </category>
 
   <!-- Math Category -->
@@ -208,17 +175,6 @@ export const ROBOT_TOOLBOX = `
           <field name="NUM">9</field>
         </shadow>
       </value>
-    </block>
-    <block type="math_trig">
-      <field name="OP">SIN</field>
-      <value name="NUM">
-        <shadow type="math_number">
-          <field name="NUM">45</field>
-        </shadow>
-      </value>
-    </block>
-    <block type="math_constant">
-      <field name="CONSTANT">PI</field>
     </block>
     <block type="math_random_int">
       <value name="FROM">

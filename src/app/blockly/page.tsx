@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { BlocklyWorkspace, ROBOT_TOOLBOX } from "~/components/blockly-workspace";
+import { RobotStatusPanel } from "~/components/robot-status-panel";
+import { robotService, type RobotStatus } from "~/lib/robot-service";
 import { 
   Play, 
   Square, 
@@ -28,18 +30,70 @@ import {
 export default function BlocklyPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [robotStatus, setRobotStatus] = useState<RobotStatus>(robotService.getStatus());
+  const [generatedCode, setGeneratedCode] = useState<string>('');
+  const [programCommands, setProgramCommands] = useState<any[]>([]);
 
-  const handleRun = () => {
-    setIsRunning(!isRunning);
-    // This would execute the blocks program on the controller
+  // Subscribe to robot status updates
+  useEffect(() => {
+    const handleStatusUpdate = (status: RobotStatus) => {
+      setRobotStatus(status);
+      setIsRunning(status.running);
+    };
+
+    robotService.onStatusChange(handleStatusUpdate);
+    
+    return () => {
+      robotService.removeStatusListener(handleStatusUpdate);
+    };
+  }, []);
+
+  const handleRun = async () => {
+    if (isRunning) {
+      // Stop program
+      robotService.stopProgram();
+    } else {
+      // Run program
+      try {
+        if (programCommands.length === 0) {
+          alert('No program to run! Drag some blocks to the workspace first.');
+          return;
+        }
+        
+        await robotService.executeProgram(programCommands);
+      } catch (error) {
+        console.error('Failed to run program:', error);
+        alert('Failed to run program: ' + (error as Error).message);
+      }
+    }
   };
 
   const handleSave = async () => {
     setIsSaving(true);
-    // Save blockly workspace
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
+    try {
+      // Save to IndexedDB or localStorage
+      const programData = {
+        code: generatedCode,
+        commands: programCommands,
+        timestamp: Date.now()
+      };
+      
+      localStorage.setItem('blockly_program', JSON.stringify(programData));
+      console.log('Program saved successfully');
+    } catch (error) {
+      console.error('Failed to save program:', error);
+    } finally {
+      setTimeout(() => setIsSaving(false), 1000);
+    }
   };
+
+  const handleCodeChange = useCallback((code: string) => {
+    setGeneratedCode(code);
+  }, []);
+
+  const handleProgramChange = useCallback((commands: any[]) => {
+    setProgramCommands(commands);
+  }, []);
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
@@ -237,11 +291,17 @@ export default function BlocklyPage() {
         <div className="flex-1 bg-muted/30">
           <BlocklyWorkspace 
             toolboxConfig={ROBOT_TOOLBOX}
-            onCodeChange={(code) => {
-              console.log("Generated code:", code);
-              // This would send the code to the controller
-            }}
+            onCodeChange={handleCodeChange}
+            onProgramChange={handleProgramChange}
           />
+        </div>
+
+        {/* Robot Status Panel */}
+        <div className="w-80 border-l bg-card overflow-y-auto">
+          <div className="p-4">
+            <h3 className="font-semibold mb-4">Robot Status</h3>
+            <RobotStatusPanel />
+          </div>
         </div>
       </div>
 
@@ -249,16 +309,22 @@ export default function BlocklyPage() {
       <div className="border-t bg-background p-2 flex items-center justify-between">
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-400'}`} />
-            <span>{isRunning ? 'Program Running' : 'Ready'}</span>
+            <div className={`w-2 h-2 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : robotStatus.connected ? 'bg-blue-500' : 'bg-gray-400'}`} />
+            <span>{isRunning ? 'Program Running' : robotStatus.connected ? 'Connected' : 'Disconnected'}</span>
           </div>
           <div className="text-muted-foreground">
-            Controller: {isRunning ? 'Executing' : 'Connected'}
+            Controller: {robotStatus.connected ? 'Ready' : 'Not Connected'}
           </div>
+          {robotStatus.connected && (
+            <div className="text-muted-foreground">
+              Motors: L{robotStatus.motors.left.power}% R{robotStatus.motors.right.power}%
+            </div>
+          )}
         </div>
         
-        <div className="text-sm text-muted-foreground">
-          Blocks: 0 | Last saved: Never
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div>Commands: {programCommands.length}</div>
+          <div>Status: {robotStatus.connected ? 'Online' : 'Offline'}</div>
         </div>
       </div>
     </div>

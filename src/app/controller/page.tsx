@@ -27,7 +27,7 @@ const mockPorts = [
     type: "motor" as const,
     connected: {
       name: motor.name,
-      deviceType: (motor.type === "large" ? "large-motor" : "medium-motor") as "large-motor" | "medium-motor",
+      deviceType: (motor.type === "dc" ? "large-motor" : motor.type === "servo" ? "servo-motor" : "stepper-motor") as "large-motor" | "servo-motor" | "stepper-motor",
     },
   })),
   ...mockSensors.map(sensor => ({
