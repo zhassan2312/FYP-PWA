@@ -3,7 +3,6 @@ import "~/styles/globals.css";
 import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 import { AppShell } from "~/components/layout/app-shell";
-import { Toaster } from "~/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Robot Platform - Code, Build, Learn",
@@ -25,7 +24,6 @@ export default function RootLayout({
         <AppShell>
           {children}
         </AppShell>
-        <Toaster />
       </body>
     </html>
   );

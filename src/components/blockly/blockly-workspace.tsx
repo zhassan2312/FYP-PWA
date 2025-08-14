@@ -16,7 +16,8 @@ export function BlocklyWorkspace({ toolboxConfig, onCodeChange, onProgramChange 
     // Only import and set the component on the client side
     const loadBlocklyComponent = async () => {
       try {
-        const { default: BlocklyWorkspaceInner } = await import('./blockly-workspace-inner');
+        const module = await import('./blockly-workspace-inner');
+        const BlocklyWorkspaceInner = module.default;
         setBlocklyComponent(() => BlocklyWorkspaceInner);
         setIsClient(true);
       } catch (error) {
@@ -41,11 +42,15 @@ export function BlocklyWorkspace({ toolboxConfig, onCodeChange, onProgramChange 
   }
 
   return (
-    <BlocklyComponent 
-      toolboxConfig={toolboxConfig}
-      onCodeChange={onCodeChange}
-      onProgramChange={onProgramChange}
-    />
+    <div className="w-full h-full">
+      {BlocklyComponent && (
+        <BlocklyComponent 
+          toolboxConfig={toolboxConfig}
+          onCodeChange={onCodeChange}
+          onProgramChange={onProgramChange}
+        />
+      )}
+    </div>
   );
 }
 

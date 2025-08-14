@@ -105,27 +105,10 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top bar */}
-        <div className="flex h-16 items-center gap-4 border-b bg-background px-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-          <div className="flex-1" />
-          {/* You can add user menu, notifications etc here */}
-        </div>
-
-        {/* Page content */}
-        <main className="flex-1 p-6">
+        <main className="p-6 max-h-screen lg:pl-72 overflow-y-auto">
           {children}
         </main>
-      </div>
+      
     </div>
   );
 }
