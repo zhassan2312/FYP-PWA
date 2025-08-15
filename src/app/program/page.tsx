@@ -5,6 +5,7 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Code, Terminal, Cpu, Settings } from 'lucide-react';
+import pythonService from '~/lib/python-service';
 
 import {
   ProgramHeader,
@@ -26,12 +27,80 @@ interface CodeError {
 }
 
 export default function ProgramPage() {
-  const [code, setCode] = useState("# Controller Programming Environment\n# Write your Python code to control sensors and motors\n\ndef main():\n    # Your code here\n    pass\n\nif __name__ == '__main__':\n    main()");
+  const [code, setCode] = useState(`# Robotics Controller Programming Environment
+# This environment supports real Python execution with libraries!
+
+import time
+import math
+
+# Example 1: Basic calculations and control flow
+def sensor_reading_simulation():
+    """Simulate sensor readings with mathematical operations"""
+    print("[SENSOR] Simulating sensor readings...")
+    
+    # Simulate distance sensor (using math)
+    distances = [math.sin(i * 0.1) * 50 + 100 for i in range(10)]
+    print(f"Distance readings: {[round(d, 2) for d in distances]}")
+    
+    # Find obstacles (distance < 50cm)
+    obstacles = [d for d in distances if d < 50]
+    if obstacles:
+        print(f"[WARNING] Obstacles detected at distances: {obstacles}")
+    else:
+        print("[OK] Clear path ahead")
+
+# Example 2: Motor control simulation
+def motor_control_demo():
+    """Demonstrate motor control logic"""
+    print("\\n[MOTOR] Motor control demonstration...")
+    
+    # Simulate different motor speeds
+    speeds = [0, 25, 50, 75, 100]
+    for speed in speeds:
+        print(f"Setting motor speed to {speed}%")
+        time.sleep(0.1)  # Small delay for demonstration
+    
+    print("Motors stopped")
+
+# Example 3: Data processing example
+def process_sensor_data():
+    """Process multiple sensor inputs"""
+    print("\\n[DATA] Processing sensor data...")
+    
+    # Simulate temperature readings
+    temperatures = [22.5, 23.1, 24.0, 23.8, 22.9]
+    avg_temp = sum(temperatures) / len(temperatures)
+    print(f"Average temperature: {avg_temp:.1f}°C")
+    
+    # Simple threshold checking
+    if avg_temp > 25:
+        print("[HOT] Temperature warning: Too hot!")
+    elif avg_temp < 20:
+        print("[COLD] Temperature warning: Too cold!")
+    else:
+        print("[NORMAL] Temperature normal")
+
+# Main execution
+if __name__ == "__main__":
+    print("*** FYP Robotics Controller - Python Programming Demo ***")
+    print("=" * 50)
+    
+    try:
+        sensor_reading_simulation()
+        motor_control_demo()
+        process_sensor_data()
+        
+        print("\\n[SUCCESS] Demo completed successfully!")
+        print("\\n[TIP] Try installing packages with: pip install numpy matplotlib")
+        print("[TIP] Check your Python environment in Settings tab")
+        
+    except Exception as e:
+        print(f"[ERROR] Error: {e}")`);;
   const [language, setLanguage] = useState<"python" | "javascript">("python");
   const [activeTab, setActiveTab] = useState("editor");
   const [isRunning, setIsRunning] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [consoleOutput, setConsoleOutput] = useState<string[]>(["🚀 Controller programming environment ready...", "📡 Awaiting connection to main controller board..."]);
+  const [consoleOutput, setConsoleOutput] = useState<string[]>(["[READY] Controller programming environment ready...", "[CONNECT] Awaiting connection to main controller board..."]);
   const [terminalHistory, setTerminalHistory] = useState<string[]>(["$ Terminal ready"]);
   const [terminalInput, setTerminalInput] = useState("");
   const [errors, setErrors] = useState<CodeError[]>([]);
@@ -114,75 +183,85 @@ export default function ProgramPage() {
     return foundErrors;
   };
 
-  const handleRun = () => {
+  const handleRun = async () => {
     setIsRunning(true);
-    const newOutput = `🚀 Starting ${language} program execution on controller...`;
-    setConsoleOutput(prev => [...prev, newOutput, "⚙️ Initializing controller board...", "📡 Connecting to sensors and motors...", "▶️ Program running on controller..."]);
-    setTimeout(() => {
+    setConsoleOutput(prev => [...prev, `[RUN] Starting ${language} program execution...`]);
+    
+    try {
+      const result = await pythonService.executeCode(code, language);
+      
+      if (result.success) {
+        setConsoleOutput(prev => [
+          ...prev,
+          "✅ Program executed successfully",
+          `⏱️ Execution time: ${result.executionTime}ms`,
+          "� Output:",
+          ...result.output.map(line => `  ${line}`)
+        ]);
+      } else {
+        setConsoleOutput(prev => [
+          ...prev,
+          "❌ Program execution failed",
+          ...(result.error ? [`Error: ${result.error}`] : []),
+          ...(result.output.length > 0 ? ["Output:", ...result.output.map(line => `  ${line}`)] : [])
+        ]);
+      }
+    } catch (error) {
+      setConsoleOutput(prev => [
+        ...prev,
+        "❌ Execution error",
+        `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+      ]);
+    } finally {
       setIsRunning(false);
-      setConsoleOutput(prev => [...prev, "✅ Controller program completed successfully.", `⏱️ Execution time: ${(Math.random() * 5 + 1).toFixed(2)}s`, "📊 All sensors and motors responded correctly."]);
-    }, 3000);
+    }
   };
 
   const handleStop = () => {
     setIsRunning(false);
-    setConsoleOutput(prev => [...prev, "🛑 Controller program execution stopped by user.", "⚠️ All motors stopped, sensors in standby mode."]);
+    setConsoleOutput(prev => [...prev, "[STOP] Controller program execution stopped by user.", "[WARNING] All motors stopped, sensors in standby mode."]);
   };
 
   const handleSave = async () => {
     setIsSaving(true);
-    setConsoleOutput(prev => [...prev, "💾 Saving controller program to board..."]);
+    setConsoleOutput(prev => [...prev, "[SAVE] Saving controller program to board..."]);
     setTimeout(() => {
       setIsSaving(false);
-      setConsoleOutput(prev => [...prev, "✅ Controller program saved successfully.", "📋 Program uploaded to main controller board."]);
+      setConsoleOutput(prev => [...prev, "[SUCCESS] Controller program saved successfully.", "[UPLOAD] Program uploaded to main controller board."]);
     }, 1000);
   };
 
   const handleReset = () => {
     setCode("# Controller Programming Environment\n# Write your Python code to control sensors and motors\n\ndef main():\n    # Your code here\n    pass\n\nif __name__ == '__main__':\n    main()");
-    setConsoleOutput(["🚀 Controller programming environment ready...", "📝 Workspace reset", "📡 Awaiting connection to main controller board..."]);
+    setConsoleOutput(["[READY] Controller programming environment ready...", "[RESET] Workspace reset", "[CONNECT] Awaiting connection to main controller board..."]);
     setErrors([]);
   };
 
-  const handleTerminalCommand = () => {
+  const handleTerminalCommand = async () => {
     if (terminalInput.trim()) {
       const command = terminalInput.trim();
       setTerminalHistory(prev => [...prev, `$ ${command}`]);
       
-      // Simulate command execution with controller-specific commands
-      setTimeout(() => {
-        let response = "";
-        switch (command.toLowerCase()) {
-          case 'help':
-            response = "Available commands: ls, pwd, python, pip, status, sensors, motors, clear, exit";
-            break;
-          case 'ls':
-            response = "controller_main.py  sensor_config.py  motor_control.py  requirements.txt";
-            break;
-          case 'pwd':
-            response = "/home/controller/FYP-PWA";
-            break;
-          case 'python --version':
-            response = "Python 3.9.7";
-            break;
-          case 'status':
-            response = "Controller Board: Connected | Sensors: 3 active | Motors: 2 ready";
-            break;
-          case 'sensors':
-            response = "Sensor 1: Temperature (Active) | Sensor 2: Distance (Active) | Sensor 3: Light (Standby)";
-            break;
-          case 'motors':
-            response = "Motor 1: Servo (Ready) | Motor 2: Stepper (Ready)";
-            break;
-          case 'clear':
-            setTerminalHistory(["$ Terminal ready"]);
-            setTerminalInput("");
-            return;
-          default:
-            response = `Command '${command}' not found. Type 'help' for available commands.`;
+      try {
+        const result = await pythonService.executeTerminalCommand(command);
+        
+        if (result.success) {
+          if (result.output.length > 0) {
+            setTerminalHistory(prev => [...prev, ...result.output]);
+          }
+        } else {
+          setTerminalHistory(prev => [
+            ...prev,
+            ...(result.error ? [`Error: ${result.error}`] : ['Command failed']),
+            ...(result.output.length > 0 ? result.output : [])
+          ]);
         }
-        setTerminalHistory(prev => [...prev, response]);
-      }, 500);
+      } catch (error) {
+        setTerminalHistory(prev => [
+          ...prev,
+          `Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        ]);
+      }
       
       setTerminalInput("");
     }
@@ -260,7 +339,7 @@ export default function ProgramPage() {
               <ProgramConsole
                 consoleOutput={consoleOutput}
                 isRunning={isRunning}
-                onClear={() => setConsoleOutput(["🚀 Controller programming environment ready...", "📡 Awaiting connection to main controller board..."])}
+                onClear={() => setConsoleOutput(["[READY] Controller programming environment ready...", "[CONNECT] Awaiting connection to main controller board..."])}
               />
             </TabsContent>
 

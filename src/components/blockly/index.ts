@@ -6,4 +6,4 @@ export { ConsoleTab } from './console-tab';
 export { SettingsTab } from './settings-tab';
 export { RobotStatusPanel } from './robot-status-panel';
 export { StatusBar } from './status-bar';
-export { useBlocklyState } from './use-blockly-state';
+export { useBlocklyState } from '~/hooks/blockly/use-blockly-state';

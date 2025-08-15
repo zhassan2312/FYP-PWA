@@ -60,7 +60,9 @@ export default function ProgramTerminal({
   };
 
   const commonCommands = [
-    'ls', 'pwd', 'cd', 'mkdir', 'touch', 'cat', 'nano', 'python --version', 'pip list', 'help'
+    'python --version', 'pip --version', 'pip list', 'pip install numpy',
+    'ls', 'pwd', 'cd', 'mkdir', 'cat', 'python -c "import sys; print(sys.version)"',
+    'pip install -r requirements.txt', 'pip show numpy', 'clear'
   ];
 
   return (

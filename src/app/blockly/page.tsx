@@ -13,7 +13,7 @@ import {
   StatusBar,
   useBlocklyState
 } from '~/components/blockly';
-import { useBlocklyFileOperations } from '~/components/blockly/use-blockly-file-operations';
+import { useBlocklyFileOperations } from '~/hooks/blockly/use-blockly-file-operations';
 
 export default function BlocklyPage() {
   const {

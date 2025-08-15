@@ -1,0 +1,7 @@
+# Temporary files directory
+
+This directory is used by the Python execution API to store temporary script files during code execution.
+
+Files in this directory are automatically created and deleted during program execution.
+
+**Do not** commit temporary files to git - they are automatically cleaned up after execution.

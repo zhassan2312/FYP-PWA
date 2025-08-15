@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import { 
   Settings, 
   Code, 
@@ -13,8 +15,14 @@ import {
   Upload,
   RotateCcw,
   Monitor,
-  Palette
+  Palette,
+  Package,
+  Plus,
+  Check,
+  X,
+  Loader2
 } from "lucide-react";
+import pythonService from "~/lib/python-service";
 
 interface ProgramSettingsProps {
   language: "python" | "javascript";
@@ -41,6 +49,81 @@ export default function ProgramSettings({
   onShowErrorsChange,
   onThemeChange
 }: ProgramSettingsProps) {
+  
+  const [newPackage, setNewPackage] = useState("");
+  const [installedPackages, setInstalledPackages] = useState<string[]>([]);
+  const [isInstalling, setIsInstalling] = useState(false);
+  const [isLoadingPackages, setIsLoadingPackages] = useState(false);
+  const [pythonEnvironment, setPythonEnvironment] = useState<{
+    pythonVersion: string | null;
+    pipVersion: string | null;
+    success: boolean;
+  }>({ pythonVersion: null, pipVersion: null, success: false });
+
+  // Load Python environment info and packages on component mount
+  useEffect(() => {
+    loadPythonEnvironment();
+    loadInstalledPackages();
+  }, []);
+
+  const loadPythonEnvironment = async () => {
+    const env = await pythonService.setupPythonEnvironment();
+    setPythonEnvironment(env);
+  };
+
+  const loadInstalledPackages = async () => {
+    setIsLoadingPackages(true);
+    try {
+      const result = await pythonService.listPackages();
+      if (result.success) {
+        // Parse pip list output to extract package names
+        const packages = result.output
+          .filter(line => line.includes(' ') && !line.startsWith('-') && !line.toLowerCase().includes('package'))
+          .map(line => line.split(' ')[0])
+          .filter((pkg): pkg is string => pkg !== undefined && pkg.length > 0);
+        setInstalledPackages(packages);
+      }
+    } catch (error) {
+      console.error('Failed to load packages:', error);
+    } finally {
+      setIsLoadingPackages(false);
+    }
+  };
+
+  const installPackage = async () => {
+    if (!newPackage.trim()) return;
+    
+    setIsInstalling(true);
+    try {
+      const result = await pythonService.installPackages([newPackage.trim()]);
+      if (result.success) {
+        setInstalledPackages(prev => [...prev, newPackage.trim()]);
+        setNewPackage("");
+      } else {
+        alert(`Failed to install ${newPackage}: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`Error installing ${newPackage}: ${error}`);
+    } finally {
+      setIsInstalling(false);
+    }
+  };
+
+  const installRoboticsPackages = async () => {
+    setIsInstalling(true);
+    try {
+      const result = await pythonService.installRoboticsPackages();
+      if (result.success) {
+        loadInstalledPackages(); // Refresh the list
+      } else {
+        alert(`Failed to install robotics packages: ${result.error}`);
+      }
+    } catch (error) {
+      alert(`Error installing robotics packages: ${error}`);
+    } finally {
+      setIsInstalling(false);
+    }
+  };
   
   const resetSettings = () => {
     onLanguageChange("python");
@@ -95,6 +178,150 @@ export default function ProgramSettings({
 
   return (
     <div className="h-full p-4 space-y-6 overflow-auto">
+      {/* Python Environment Status */}
+      <Card className="shadow-lg border-l-4 border-l-green-500">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Cpu className="h-5 w-5 text-green-500" />
+            Python Environment
+          </CardTitle>
+          <CardDescription>
+            Python and package management status
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+              <span className="font-medium">Python Version:</span>
+              <Badge variant={pythonEnvironment.pythonVersion ? "default" : "destructive"}>
+                {pythonEnvironment.pythonVersion || "Not Found"}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded">
+              <span className="font-medium">Pip Version:</span>
+              <Badge variant={pythonEnvironment.pipVersion ? "default" : "destructive"}>
+                {pythonEnvironment.pipVersion || "Not Found"}
+              </Badge>
+            </div>
+          </div>
+          
+          <Button 
+            onClick={loadPythonEnvironment}
+            variant="outline"
+            className="w-full"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Refresh Environment
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Package Management */}
+      <Card className="shadow-lg border-l-4 border-l-purple-500">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Package className="h-5 w-5 text-purple-500" />
+            Python Packages
+          </CardTitle>
+          <CardDescription>
+            Install and manage Python libraries for robotics programming
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Install New Package */}
+          <div className="flex gap-2">
+            <Input
+              placeholder="Enter package name (e.g., numpy, opencv-python)"
+              value={newPackage}
+              onChange={(e) => setNewPackage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && installPackage()}
+              disabled={isInstalling}
+            />
+            <Button 
+              onClick={installPackage}
+              disabled={!newPackage.trim() || isInstalling}
+            >
+              {isInstalling ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+
+          {/* Quick Install Robotics Packages */}
+          <Button 
+            onClick={installRoboticsPackages}
+            disabled={isInstalling}
+            className="w-full bg-purple-600 hover:bg-purple-700"
+          >
+            {isInstalling ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Installing...
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Install Robotics Packages
+              </>
+            )}
+          </Button>
+
+          {/* Installed Packages */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Installed Packages</h4>
+              <Button 
+                onClick={loadInstalledPackages}
+                variant="outline"
+                size="sm"
+                disabled={isLoadingPackages}
+              >
+                {isLoadingPackages ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <RotateCcw className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+            
+            <div className="max-h-40 overflow-auto border rounded p-2 bg-gray-50">
+              {isLoadingPackages ? (
+                <div className="text-center text-gray-500 py-4">
+                  Loading packages...
+                </div>
+              ) : installedPackages.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {installedPackages.map((pkg, index) => (
+                    <Badge key={index} variant="secondary" className="text-xs">
+                      {pkg}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-4">
+                  No packages found. Install some packages to get started.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Common Robotics Packages Info */}
+          <div className="p-3 bg-blue-50 rounded border border-blue-200">
+            <h5 className="font-medium text-blue-800 mb-2">Robotics Package Bundle Includes:</h5>
+            <div className="text-xs text-blue-700 grid grid-cols-2 gap-1">
+              <span>• numpy (Math operations)</span>
+              <span>• opencv-python (Computer vision)</span>
+              <span>• matplotlib (Plotting)</span>
+              <span>• pandas (Data analysis)</span>
+              <span>• pyserial (Serial communication)</span>
+              <span>• websocket-client (Real-time communication)</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Editor Settings */}
       <Card className="shadow-lg border-l-4 border-l-blue-500">
         <CardHeader>
