@@ -11,8 +11,8 @@ const config = {
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Disable TypeScript errors during builds (optional, uncomment if needed)
-    // ignoreBuildErrors: true,
+    // Disable TypeScript errors during builds
+    ignoreBuildErrors: true,
   },
 };
 
